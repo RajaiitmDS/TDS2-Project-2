@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Analyst Agent</title>
+  <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link href="/static/style.css" rel="stylesheet">
+
+  <style>
+    /* Custom Theme Colors */
+    .btn-primary {
+      background: #6f42c1;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+    .btn-primary:hover {
+      background: #5a34a0;
+      box-shadow: 0 0 10px rgba(111, 66, 193, 0.5);
+    }
+
+    .btn-outline-primary {
+      border-radius: 8px;
+      border-color: #6f42c1;
+      color: #6f42c1;
+      font-weight: 600;
+    }
+    .btn-outline-primary:hover {
+      background: #6f42c1;
+      color: #fff;
+    }
+
+    .btn-outline-danger {
+      border-radius: 8px;
+      font-weight: bold;
+    }
+
+    .card-header.bg-success {
+      background: linear-gradient(90deg, #198754, #20c997);
+    }
+
+    .alert-danger {
+      background: #ffdddd;
+      color: #a33;
+      border: none;
+      border-radius: 8px;
+    }
+
+    .progress-bar {
+      background: #6f42c1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-5">
+    <div class="text-center mb-5">
+      <h1 class="display-4">Data Analyst Agent</h1>
+      <p class="lead text-muted">Upload your data and questions for AI-powered analysis</p>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="card shadow-lg">
+      <div class="card-body">
+        <form id="analysisForm" enctype="multipart/form-data">
+          <div class="mb-3">
+            <label class="form-label"><i class="fas fa-question-circle me-2"></i> Questions File</label>
+            <input type="file" class="form-control" name="questions.txt" accept=".txt" required>
+            <small class="text-muted">Upload a .txt file containing your analysis questions</small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label"><i class="fas fa-file-alt me-2"></i> Additional Files</label>
+            <div id="fileInputs">
+              <div class="input-group mb-2">
+                <input type="file" class="form-control" name="data_file_1">
+                <button class="btn btn-outline-secondary" type="button" onclick="addFileInput()">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <small class="text-muted">Upload CSV, JSON, images, or other files</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+Analyse Data
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingSection" class="text-center mt-4 d-none">
+      <div class="spinner-border text-primary mb-3"></div>
+      <h5>Analyzing your data...</h5>
+      <div class="progress mt-3">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" id="progressBar"></div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsSection" class="card mt-4 d-none">
+      <div class="card-header bg-success text-white">
+        <i class="fas fa-check-circle me-2"></i> Results
+      </div>
+      <div class="card-body">
+        <pre id="resultsContent" class="bg-dark text-light p-3 rounded"></pre>
+        <button class="btn btn-outline-primary mt-2" onclick="copyResults()">
+          <i class="fas fa-copy me-2"></i> Copy
+        </button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorSection" class="alert alert-danger mt-4 d-none">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <span id="errorContent"></span>
+    </div>
+  </div>
+
+  <script>
+    let fileCounter = 1;
+
+    function addFileInput() {
+      fileCounter++;
+      const div = document.createElement("div");
+      div.className = "input-group mb-2";
+      div.innerHTML = `
+        <input type="file" class="form-control" name="data_file_${fileCounter}">
+        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">
+          <i class="fas fa-minus"></i>
+        </button>`;
+      document.getElementById("fileInputs").appendChild(div);
+    }
+
+    function updateProgress() {
+      const bar = document.getElementById("progressBar");
+      let width = 0;
+      return setInterval(() => {
+        width = Math.min(width + Math.random() * 3, 95);
+        bar.style.width = width + "%";
+      }, 800);
+    }
+
+    function copyResults() {
+      const text = document.getElementById("resultsContent").textContent;
+      navigator.clipboard.writeText(text);
+    }
+
+    document.getElementById("analysisForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      document.getElementById("resultsSection").classList.add("d-none");
+      document.getElementById("errorSection").classList.add("d-none");
+      document.getElementById("loadingSection").classList.remove("d-none");
+
+      const interval = updateProgress();
+      try {
+        const formData = new FormData(e.target);
+        const res = await fetch("/api/", { method: "POST", body: formData });
+
+        clearInterval(interval);
+        document.getElementById("progressBar").style.width = "100%";
+
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById("resultsContent").textContent = JSON.stringify(data, null, 2);
+          document.getElementById("loadingSection").classList.add("d-none");
+          document.getElementById("resultsSection").classList.remove("d-none");
+        } else {
+          const err = await res.json();
+          document.getElementById("errorContent").textContent = err.error || "Unknown error";
+          document.getElementById("loadingSection").classList.add("d-none");
+          document.getElementById("errorSection").classList.remove("d-none");
+        }
+      } catch (err) {
+        clearInterval(interval);
+        document.getElementById("errorContent").textContent = "Network error: " + err.message;
+        document.getElementById("loadingSection").classList.add("d-none");
+        document.getElementById("errorSection").classList.remove("d-none");
+      }
+    });
+  </script>
+</body>
+</html>
