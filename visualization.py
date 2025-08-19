@@ -192,3 +192,101 @@ def create_time_series_plot(df, x_col, y_col, title="Time Series"):
     except Exception as e:
         logger.error(f"Time series plot creation failed: {e}")
         raise
+
+def create_bar_chart(data, x_col, y_col, title="Bar Chart", color='blue'):
+    """Create a bar chart for evaluation format"""
+    try:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create bar chart
+        ax.bar(data[x_col], data[y_col], color=color, alpha=0.7)
+        
+        # Set labels and title
+        ax.set_xlabel(x_col)
+        ax.set_ylabel(y_col)
+        ax.set_title(title)
+        ax.grid(True, alpha=0.3)
+        
+        # Rotate x-axis labels if needed
+        if len(str(data[x_col].iloc[0])) > 5:
+            plt.xticks(rotation=45)
+        
+        plt.tight_layout()
+        
+        # Save to base64
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        buffer.seek(0)
+        
+        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        plt.close(fig)
+        
+        return f"data:image/png;base64,{image_base64}"
+        
+    except Exception as e:
+        logger.error(f"Bar chart creation failed: {e}")
+        raise
+
+def create_line_chart(data, x_col, y_col, title="Line Chart", color='red'):
+    """Create a line chart for evaluation format"""
+    try:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create line chart
+        ax.plot(data[x_col], data[y_col], color=color, linewidth=2, marker='o', markersize=4)
+        
+        # Set labels and title
+        ax.set_xlabel(x_col)
+        ax.set_ylabel(y_col)
+        ax.set_title(title)
+        ax.grid(True, alpha=0.3)
+        
+        # Handle date formatting if x_col contains dates
+        if data[x_col].dtype == 'datetime64[ns]' or 'date' in x_col.lower():
+            plt.xticks(rotation=45)
+        
+        plt.tight_layout()
+        
+        # Save to base64
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        buffer.seek(0)
+        
+        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        plt.close(fig)
+        
+        return f"data:image/png;base64,{image_base64}"
+        
+    except Exception as e:
+        logger.error(f"Line chart creation failed: {e}")
+        raise
+
+def create_histogram(data, title="Histogram", color='orange', bins=10):
+    """Create a histogram for evaluation format"""
+    try:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        
+        # Create histogram
+        ax.hist(data, bins=bins, color=color, alpha=0.7, edgecolor='black')
+        
+        # Set labels and title
+        ax.set_xlabel('Values')
+        ax.set_ylabel('Frequency')
+        ax.set_title(title)
+        ax.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Save to base64
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
+        buffer.seek(0)
+        
+        image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        plt.close(fig)
+        
+        return f"data:image/png;base64,{image_base64}"
+        
+    except Exception as e:
+        logger.error(f"Histogram creation failed: {e}")
+        raise
